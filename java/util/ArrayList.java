@@ -132,7 +132,7 @@ public class ArrayList<E> extends AbstractList<E>
      * empty ArrayList with elementData == DEFAULTCAPACITY_EMPTY_ELEMENTDATA
      * will be expanded to DEFAULT_CAPACITY when the first element is added.
      */
-    transient Object[] elementData; // non-private to simplify nested class access
+    transient Object[] elementData; // non-private to simplify nested class access 并不是所有元素都要序列化 transient修饰
 
     /**
      * The size of the ArrayList (the number of elements it contains).
@@ -158,7 +158,7 @@ public class ArrayList<E> extends AbstractList<E>
                                                initialCapacity);
         }
     }
-
+    // 得到空数组, 当真正对数组进行添加元素操作时，才真正分配容量。即向数组中添加第一个元素时，数组容量扩为10。
     /**
      * Constructs an empty list with an initial capacity of ten.
      */
@@ -219,7 +219,7 @@ public class ArrayList<E> extends AbstractList<E>
             ensureExplicitCapacity(minCapacity);
         }
     }
-
+    // 计算 list 所需要的容量，后面 list 内部的 数组要根据这个再算自己要多扩大多少
     private static int calculateCapacity(Object[] elementData, int minCapacity) {
         if (elementData == DEFAULTCAPACITY_EMPTY_ELEMENTDATA) {
             return Math.max(DEFAULT_CAPACITY, minCapacity);
@@ -230,7 +230,7 @@ public class ArrayList<E> extends AbstractList<E>
     private void ensureCapacityInternal(int minCapacity) {
         ensureExplicitCapacity(calculateCapacity(elementData, minCapacity));
     }
-
+    // 判断是否需要扩容！！ 如果现在插入数据需要的 minCapacity，超过存放数据的数组长度就扩容。 // minCapacity 一般就是 list.size + 1，注意 list.size 不等于 存放数据的数组长度，存放数据的数组长度是根据 list.size 动态扩容的
     private void ensureExplicitCapacity(int minCapacity) {
         modCount++;
 
@@ -253,16 +253,16 @@ public class ArrayList<E> extends AbstractList<E>
      *
      * @param minCapacity the desired minimum capacity
      */
-    private void grow(int minCapacity) {
+    private void grow(int minCapacity) {    // 这个 minCapacity 一般就是 原容量 + 1，第一次的时候是默认大小 10
         // overflow-conscious code
         int oldCapacity = elementData.length;
-        int newCapacity = oldCapacity + (oldCapacity >> 1);
-        if (newCapacity - minCapacity < 0)
+        int newCapacity = oldCapacity + (oldCapacity >> 1); // !! 将oldCapacity 右移一位，其效果相当于oldCapacity /2，右移n位相当于除以 2 的 n 次方。位运算的速度远远快于整除运算，整句运算式的结果就是将新容量更新为旧容量的1.5倍，
+        if (newCapacity - minCapacity < 0)      //然后检查新容量是否大于最小需要容量，若还是小于最小需要容量，那么就把最小需要容量当作数组的新容量，
             newCapacity = minCapacity;
-        if (newCapacity - MAX_ARRAY_SIZE > 0)
+        if (newCapacity - MAX_ARRAY_SIZE > 0)       //再检查新容量是否超出了ArrayList所定义的最大容量，确定上界
             newCapacity = hugeCapacity(minCapacity);
         // minCapacity is usually close to size, so this is a win:
-        elementData = Arrays.copyOf(elementData, newCapacity);
+        elementData = Arrays.copyOf(elementData, newCapacity);  // Arrays.copyOf() 是浅克隆， 只复制了对象的引用（内存地址），并没有为每个元素新创建对象！：https://blog.csdn.net/abysscarry/article/details/88653500
     }
 
     private static int hugeCapacity(int minCapacity) {
@@ -468,7 +468,7 @@ public class ArrayList<E> extends AbstractList<E>
      * Inserts the specified element at the specified position in this
      * list. Shifts the element currently at that position (if any) and
      * any subsequent elements to the right (adds one to their indices).
-     *
+     * arraycopy()方法实现数组自己复制自己，实现从index开始之后的所有成员后移一个位置；将element插入index位置；最后size加1。
      * @param index index at which the specified element is to be inserted
      * @param element element to be inserted
      * @throws IndexOutOfBoundsException {@inheritDoc}
@@ -478,7 +478,7 @@ public class ArrayList<E> extends AbstractList<E>
 
         ensureCapacityInternal(size + 1);  // Increments modCount!!
         System.arraycopy(elementData, index, elementData, index + 1,
-                         size - index);
+                         size - index);  //elementData:源数组;index:源数组中的起始位置;elementData：目标数组；index + 1：目标数组中的起始位置； size - index：要复制的数组元素的数量；
         elementData[index] = element;
         size++;
     }
@@ -1466,3 +1466,7 @@ public class ArrayList<E> extends AbstractList<E>
         modCount++;
     }
 }
+/**
+ * 1. 扩容的 grow()
+ * 2. ArrayList 中大量调用了这两个方法：`System.arraycopy()` 和 `Arrays.copyOf()`方法。看两者源码，copyOf() 内部实际调用了 `System.arraycopy()` 方法
+ */
